@@ -1,5 +1,6 @@
 import os
 import json
+import hashlib
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
@@ -11,24 +12,27 @@ WEBSITES_FILE = "websites.json"
 SEEN_FILE = "seen.json"
 
 
-def load_json(filename, default):
+def load_seen():
+    if not os.path.exists(SEEN_FILE):
+        return set()
+
     try:
-        with open(filename, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        return default
+        with open(SEEN_FILE, "r", encoding="utf-8") as f:
+            return set(json.load(f))
+    except Exception:
+        return set()
 
 
-def save_json(filename, data):
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+def save_seen(seen):
+    with open(SEEN_FILE, "w", encoding="utf-8") as f:
+        json.dump(sorted(list(seen)), f, indent=2)
 
 
 def send_telegram(message):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+    api_url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
     response = requests.post(
-        url,
+        api_url,
         data={
             "chat_id": CHAT_ID,
             "text": message,
@@ -40,19 +44,31 @@ def send_telegram(message):
     response.raise_for_status()
 
 
-def check_website(site, seen):
+def make_id(url, title):
+    raw = f"{url}|{title}".encode("utf-8")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def check_site(site, seen):
     name = site["name"]
-    url = site["url"]
+    category = site["category"]
+    base_url = site["url"]
     keywords = [x.lower() for x in site.get("keywords", [])]
+
+    print(f"Checking: {name}")
 
     try:
         response = requests.get(
-            url,
-            timeout=30,
+            base_url,
             headers={
-                "User-Agent": "Mozilla/5.0"
-            }
+                "User-Agent": (
+                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 Chrome/120 Safari/537.36"
+                )
+            },
+            timeout=30
         )
+
         response.raise_for_status()
 
         soup = BeautifulSoup(response.text, "html.parser")
@@ -61,50 +77,59 @@ def check_website(site, seen):
 
         for link in soup.find_all("a", href=True):
             title = link.get_text(" ", strip=True)
-            href = urljoin(url, link["href"])
+            href = urljoin(base_url, link["href"])
 
-            text = f"{title} {href}".lower()
+            if not title:
+                continue
 
-            if title and any(keyword in text for keyword in keywords):
-                found.append({
-                    "title": title,
-                    "url": href
-                })
+            combined = f"{title} {href}".lower()
 
-        new_items = []
+            if any(keyword in combined for keyword in keywords):
 
-        for item in found:
-            item_id = item["url"]
+                item_id = make_id(href, title)
 
-            if item_id not in seen:
-                seen.add(item_id)
-                new_items.append(item)
+                if item_id not in seen:
+                    found.append({
+                        "id": item_id,
+                        "title": title,
+                        "url": href,
+                        "category": category,
+                        "source": name
+                    })
 
-        for item in new_items[:10]:
+        for item in found[:10]:
+
             message = (
-                f"🚨 NEW GOVERNMENT UPDATE\n\n"
-                f"🏢 Source: {name}\n"
+                "🚨 NEW GOVERNMENT UPDATE\n\n"
+                f"📂 Category: {item['category']}\n"
+                f"🏢 Organization: {item['source']}\n\n"
                 f"📌 {item['title']}\n\n"
                 f"🔗 Official Link:\n{item['url']}"
             )
 
             send_telegram(message)
 
-        print(f"{name}: {len(new_items)} new item(s)")
+            seen.add(item["id"])
 
-    except Exception as e:
-        print(f"{name}: ERROR - {e}")
+        print(f"{name}: {len(found)} new item(s)")
+
+    except Exception as error:
+        print(f"{name}: ERROR - {error}")
 
 
 def main():
-    websites = load_json(WEBSITES_FILE, [])
-    seen_list = load_json(SEEN_FILE, [])
-    seen = set(seen_list)
+
+    with open(WEBSITES_FILE, "r", encoding="utf-8") as f:
+        websites = json.load(f)
+
+    seen = load_seen()
 
     for site in websites:
-        check_website(site, seen)
+        check_site(site, seen)
 
-    save_json(SEEN_FILE, list(seen))
+    save_seen(seen)
+
+    print("Monitoring completed successfully.")
 
 
 if __name__ == "__main__":
