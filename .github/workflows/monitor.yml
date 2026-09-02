@@ -2,17 +2,20 @@ name: Government Vacancy Monitor
 
 on:
   workflow_dispatch:
+
   schedule:
     - cron: "*/30 * * * *"
 
 jobs:
   monitor:
+
     runs-on: ubuntu-latest
 
     permissions:
       contents: write
 
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -22,18 +25,26 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          pip install -r requirements.txt
 
       - name: Run vacancy monitor
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python bot.py
+        run: |
+          python bot.py
 
-      - name: Save seen notifications
+      - name: Save notification history
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add seen.json
-          git diff --cached --quiet || git commit -m "Update seen notifications"
-          git push
+
+          if git diff --cached --quiet; then
+            echo "No changes to save."
+          else
+            git commit -m "Update notification history"
+            git push
+          fi
