@@ -1,72 +1,86 @@
 [
   {
-    "name": "Assam Govt - Niyukti",
-    "category": "Assam Govt",
-    "url": "https://niyukti.assam.gov.in/all_jobs.php",
-    "keywords": [
-      "recruitment",
-      "vacancy",
-      "job",
-      "post",
-      "apply",
-      "advertisement"
-    ]
-  },
-  {
-    "name": "UPSC",
+    "name": "UPSC Recruitment",
     "category": "Central Govt",
     "url": "https://www.upsc.gov.in/recruitment/recruitment-advertisement",
-    "keywords": [
-      "recruitment",
-      "advertisement",
-      "vacancy",
-      "post"
-    ]
+    "keywords": ["advertisement", "recruitment", "vacancy", "post"]
   },
   {
     "name": "SSC",
     "category": "Central Govt",
     "url": "https://ssc.gov.in/",
-    "keywords": [
-      "notice",
-      "notification",
-      "recruitment",
-      "vacancy",
-      "examination"
-    ]
+    "keywords": ["notice", "notification", "recruitment", "vacancy"]
+  },
+  {
+    "name": "IBPS",
+    "category": "Central Govt",
+    "url": "https://www.ibps.in/",
+    "keywords": ["notification", "apply", "recruitment", "CRP", "vacancy"]
+  },
+  {
+    "name": "India Post Vacancies",
+    "category": "Central Govt",
+    "url": "https://www.indiapost.gov.in/vacancies",
+    "keywords": ["notification", "vacancy", "recruitment", "post", "GDS"]
+  },
+  {
+    "name": "Assam Niyukti",
+    "category": "Assam Govt",
+    "url": "https://niyukti.assam.gov.in/all_jobs.php",
+    "keywords": ["recruitment", "vacancy", "job", "post", "apply"]
+  },
+  {
+    "name": "APSC",
+    "category": "Assam Govt",
+    "url": "https://apsc.nic.in/",
+    "keywords": ["advertisement", "recruitment", "vacancy", "notification"]
+  },
+  {
+    "name": "NHM Assam Recruitment",
+    "category": "Assam Govt",
+    "url": "https://nhm.assam.gov.in/portlets/recruitment",
+    "keywords": ["recruitment", "vacancy", "advertisement", "post"]
+  },
+  {
+    "name": "Assam Government",
+    "category": "Assam Govt",
+    "url": "https://assam.gov.in/",
+    "keywords": ["recruitment", "vacancy", "appointment", "notification"]
+  },
+  {
+    "name": "Central Selection Board BTC",
+    "category": "BTC/BTR",
+    "url": "https://www.centralselectionboard.com/",
+    "keywords": ["recruitment", "advertisement", "vacancy", "apply", "post"]
+  },
+  {
+    "name": "Indian Coast Guard",
+    "category": "Defence",
+    "url": "https://indiancoastguard.gov.in/recruitment",
+    "keywords": ["recruitment", "advertisement", "vacancy", "post"]
+  },
+  {
+    "name": "Indian Air Force",
+    "category": "Defence",
+    "url": "https://careerairforce.gov.in/",
+    "keywords": ["job", "recruitment", "agniveervayu", "vacancy", "career"]
   },
   {
     "name": "Indian Navy",
     "category": "Defence",
     "url": "https://www.joinindiannavy.gov.in/",
-    "keywords": [
-      "recruitment",
-      "agniveer",
-      "officer",
-      "sailor",
-      "application"
-    ]
-  },
-  {
-    "name": "Indian Coast Guard",
-    "category": "Defence",
-    "url": "https://www.indiancoastguard.gov.in/recruitment",
-    "keywords": [
-      "recruitment",
-      "vacancy",
-      "post",
-      "advertisement"
-    ]
+    "keywords": ["recruitment", "application", "agniveer", "officer", "vacancy"]
   },
   {
     "name": "National Scholarship Portal",
     "category": "Scholarship",
     "url": "https://scholarships.gov.in/All-Scholarships",
-    "keywords": [
-      "scholarship",
-      "scheme",
-      "application",
-      "student"
-    ]
+    "keywords": ["scholarship", "scheme", "application", "student", "open"]
+  },
+  {
+    "name": "Assam Scholarship - Sewa Setu",
+    "category": "Scholarship",
+    "url": "https://sewasetu.assam.gov.in/site/service-apply/apply-for-scholarship",
+    "keywords": ["scholarship", "application", "student", "scheme"]
   }
 ]
