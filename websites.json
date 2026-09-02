@@ -1,13 +1,72 @@
 [
   {
-    "name": "Assam Government",
-    "url": "https://assam.gov.in/",
+    "name": "Assam Govt - Niyukti",
+    "category": "Assam Govt",
+    "url": "https://niyukti.assam.gov.in/all_jobs.php",
     "keywords": [
       "recruitment",
       "vacancy",
       "job",
-      "appointment",
-      "notification"
+      "post",
+      "apply",
+      "advertisement"
+    ]
+  },
+  {
+    "name": "UPSC",
+    "category": "Central Govt",
+    "url": "https://www.upsc.gov.in/recruitment/recruitment-advertisement",
+    "keywords": [
+      "recruitment",
+      "advertisement",
+      "vacancy",
+      "post"
+    ]
+  },
+  {
+    "name": "SSC",
+    "category": "Central Govt",
+    "url": "https://ssc.gov.in/",
+    "keywords": [
+      "notice",
+      "notification",
+      "recruitment",
+      "vacancy",
+      "examination"
+    ]
+  },
+  {
+    "name": "Indian Navy",
+    "category": "Defence",
+    "url": "https://www.joinindiannavy.gov.in/",
+    "keywords": [
+      "recruitment",
+      "agniveer",
+      "officer",
+      "sailor",
+      "application"
+    ]
+  },
+  {
+    "name": "Indian Coast Guard",
+    "category": "Defence",
+    "url": "https://www.indiancoastguard.gov.in/recruitment",
+    "keywords": [
+      "recruitment",
+      "vacancy",
+      "post",
+      "advertisement"
+    ]
+  },
+  {
+    "name": "National Scholarship Portal",
+    "category": "Scholarship",
+    "url": "https://scholarships.gov.in/All-Scholarships",
+    "keywords": [
+      "scholarship",
+      "scheme",
+      "application",
+      "student"
     ]
   }
 ]
