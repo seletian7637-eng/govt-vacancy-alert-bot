@@ -1,9 +1,9 @@
-```python
 import os
 import json
 import hashlib
 import re
 import requests
+
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from pypdf import PdfReader
@@ -206,6 +206,10 @@ def load_seen():
         return set(), False
 
 
+# =========================================================
+# SAVE SEEN
+# =========================================================
+
 def save_seen(seen):
 
     try:
@@ -267,37 +271,6 @@ def send_telegram(message):
 
 
 # =========================================================
-# UNIQUE ID
-# =========================================================
-
-def normalize_url(url):
-
-    url = url.strip()
-
-    parsed = urlparse(url)
-
-    clean = (
-        f"{parsed.scheme}://"
-        f"{parsed.netloc}"
-        f"{parsed.path}"
-    )
-
-    return clean.rstrip("/")
-
-
-def make_id(url, title):
-
-    value = (
-        f"{normalize_url(url)}|"
-        f"{clean_text(title).lower()}"
-    )
-
-    return hashlib.sha256(
-        value.encode("utf-8")
-    ).hexdigest()
-
-
-# =========================================================
 # CLEAN TEXT
 # =========================================================
 
@@ -321,7 +294,42 @@ def clean_text(text):
 
 
 # =========================================================
-# LAST DATE
+# NORMALIZE URL
+# =========================================================
+
+def normalize_url(url):
+
+    url = url.strip()
+
+    parsed = urlparse(url)
+
+    clean = (
+        f"{parsed.scheme}://"
+        f"{parsed.netloc}"
+        f"{parsed.path}"
+    )
+
+    return clean.rstrip("/")
+
+
+# =========================================================
+# UNIQUE ID
+# =========================================================
+
+def make_id(url, title):
+
+    value = (
+        f"{normalize_url(url)}|"
+        f"{clean_text(title).lower()}"
+    )
+
+    return hashlib.sha256(
+        value.encode("utf-8")
+    ).hexdigest()
+
+
+# =========================================================
+# LAST DATE EXTRACTION
 # =========================================================
 
 def extract_last_date(text):
@@ -348,12 +356,13 @@ def extract_last_date(text):
         r"\s*(?:for application)?\s*[:\-]?\s*"
         r"((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})",
 
-        # Applications upto
+        # Applications upto DD/MM/YYYY
         r"applications?.{0,100}?"
         r"(?:upto|up to)"
         r"\s*[:\-]?\s*"
         r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
 
+        # Applications upto DD Month YYYY
         r"applications?.{0,100}?"
         r"(?:upto|up to)"
         r"\s*[:\-]?\s*"
@@ -369,11 +378,12 @@ def extract_last_date(text):
         )
 
         if match:
+
             return clean_text(
                 match.group(1)
             )
 
-    # Generic date search near "last date"
+    # Generic last date search
     match = re.search(
         r"last date.{0,120}?"
         r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
@@ -382,13 +392,14 @@ def extract_last_date(text):
     )
 
     if match:
+
         return match.group(1)
 
     return "Not mentioned"
 
 
 # =========================================================
-# QUALIFICATION
+# QUALIFICATION EXTRACTION
 # =========================================================
 
 def extract_qualification(text):
@@ -405,14 +416,16 @@ def extract_qualification(text):
         if qualification.lower() in text_lower:
 
             if qualification not in found:
+
                 found.append(
                     qualification
                 )
 
     if not found:
+
         return "Not mentioned"
 
-    # Remove duplicate / overlapping terms
+    # Remove overlapping terms
     result = []
 
     for item in found:
@@ -422,10 +435,13 @@ def extract_qualification(text):
         for existing in result:
 
             if item.lower() in existing.lower():
+
                 overlapping = True
+
                 break
 
         if not overlapping:
+
             result.append(item)
 
     return ", ".join(
@@ -434,7 +450,7 @@ def extract_qualification(text):
 
 
 # =========================================================
-# PDF EXTRACTION
+# PDF TEXT EXTRACTION
 # =========================================================
 
 def extract_pdf_text(url):
@@ -511,16 +527,17 @@ def is_vacancy(
     title_lower = title_clean.lower()
 
     # ---------------------------------------------
-    # Reject clearly irrelevant titles
+    # Ignore irrelevant titles
     # ---------------------------------------------
 
     for keyword in IGNORE_KEYWORDS:
 
         if keyword in title_lower:
+
             return False
 
     # ---------------------------------------------
-    # Website-specific keywords
+    # Website specific keywords
     # ---------------------------------------------
 
     custom_keywords = []
@@ -534,7 +551,7 @@ def is_vacancy(
         ]
 
     # ---------------------------------------------
-    # Strong job indicator
+    # Strong indicators
     # ---------------------------------------------
 
     has_strong_indicator = any(
@@ -543,7 +560,7 @@ def is_vacancy(
     )
 
     # ---------------------------------------------
-    # General/custom indicator
+    # General indicators
     # ---------------------------------------------
 
     all_keywords = list(
@@ -559,18 +576,19 @@ def is_vacancy(
     )
 
     if not has_general_indicator:
+
         return False
 
     # ---------------------------------------------
-    # If page has strong indicator → accept
+    # Strong match = vacancy
     # ---------------------------------------------
 
     if has_strong_indicator:
+
         return True
 
     # ---------------------------------------------
-    # For weaker matches require application/
-    # recruitment context.
+    # Weak match requires context
     # ---------------------------------------------
 
     context_keywords = [
@@ -667,6 +685,7 @@ def get_links(site):
         )
 
         if not title or not href:
+
             continue
 
         if href.startswith(
@@ -677,10 +696,9 @@ def get_links(site):
                 "#"
             )
         ):
+
             continue
 
-        # Ignore common file types that aren't useful
-        # for vacancy detection.
         clean_href = (
             href.lower()
             .split("?")[0]
@@ -688,11 +706,19 @@ def get_links(site):
 
         page_text = ""
 
+        # -----------------------------------------
+        # Read PDF notification
+        # -----------------------------------------
+
         if clean_href.endswith(".pdf"):
 
             page_text = extract_pdf_text(
                 href
             )
+
+        # -----------------------------------------
+        # Detect vacancy
+        # -----------------------------------------
 
         if not is_vacancy(
             title,
@@ -700,6 +726,7 @@ def get_links(site):
             page_text,
             website_keywords
         ):
+
             continue
 
         source_text = clean_text(
@@ -715,15 +742,22 @@ def get_links(site):
         )
 
         item = {
+
             "id": make_id(
                 href,
                 title
             ),
+
             "title": title,
+
             "url": href,
+
             "category": category,
+
             "source": name,
+
             "last_date": last_date,
+
             "qualification": qualification
         }
 
@@ -731,7 +765,10 @@ def get_links(site):
             item
         )
 
+    # ---------------------------------------------
     # Remove duplicates
+    # ---------------------------------------------
+
     unique_results = {}
 
     for item in results:
@@ -786,15 +823,17 @@ def main():
     print("")
     print("=" * 60)
     print("GOVERNMENT VACANCY MONITOR STARTED")
+
     print(
         datetime.now().strftime(
             "%Y-%m-%d %H:%M:%S"
         )
     )
+
     print("=" * 60)
 
     # ---------------------------------------------
-    # Load websites
+    # Load websites.json
     # ---------------------------------------------
 
     try:
@@ -811,6 +850,7 @@ def main():
             websites,
             list
         ):
+
             raise ValueError(
                 "websites.json must contain a list"
             )
@@ -829,7 +869,7 @@ def main():
     )
 
     # ---------------------------------------------
-    # Load history
+    # Load seen.json
     # ---------------------------------------------
 
     seen, has_baseline = load_seen()
@@ -842,7 +882,7 @@ def main():
     all_found = []
 
     # ---------------------------------------------
-    # Check every website
+    # Check all websites
     # ---------------------------------------------
 
     for site in websites:
@@ -870,13 +910,14 @@ def main():
             )
 
     print("")
+
     print(
         f"Total vacancy items found: "
         f"{len(all_found)}"
     )
 
     # ---------------------------------------------
-    # First run baseline
+    # First run
     # ---------------------------------------------
 
     if not has_baseline:
@@ -891,6 +932,7 @@ def main():
         )
 
         print("")
+
         print(
             f"Baseline created: "
             f"{len(initial_ids)} items"
@@ -915,6 +957,7 @@ def main():
     for item in all_found:
 
         if item["id"] in seen:
+
             continue
 
         new_items.append(
@@ -922,13 +965,14 @@ def main():
         )
 
     print("")
+
     print(
         f"NEW vacancy items: "
         f"{len(new_items)}"
     )
 
     # ---------------------------------------------
-    # Send alerts
+    # Send Telegram alerts
     # ---------------------------------------------
 
     successfully_sent = 0
@@ -949,8 +993,7 @@ def main():
 
             successfully_sent += 1
 
-            # Only mark as seen AFTER
-            # successful Telegram delivery.
+            # Mark seen only after successful send
             seen.add(
                 item["id"]
             )
@@ -968,12 +1011,8 @@ def main():
                 f"{error}"
             )
 
-            # Failed alerts remain unseen
-            # and will be retried next run.
-
     # ---------------------------------------------
-    # Prevent unlimited history growth from
-    # duplicate entries already present.
+    # Save notification history
     # ---------------------------------------------
 
     save_seen(
@@ -981,7 +1020,9 @@ def main():
     )
 
     print("")
+
     print("=" * 60)
+
     print(
         f"Alerts successfully sent: "
         f"{successfully_sent}"
@@ -995,9 +1036,8 @@ def main():
 
 
 # =========================================================
-# RUN
+# START BOT
 # =========================================================
 
 if __name__ == "__main__":
     main()
-```
