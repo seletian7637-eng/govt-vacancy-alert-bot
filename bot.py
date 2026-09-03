@@ -30,6 +30,7 @@ HEADERS = {
 }
 
 REQUEST_TIMEOUT = 40
+TELEGRAM_TIMEOUT = 30
 MAX_PDF_PAGES = 10
 MAX_TEXT_LENGTH = 30000
 MAX_TELEGRAM_ALERTS = 10
@@ -43,12 +44,12 @@ VACANCY_KEYWORDS = [
     "recruitment",
     "recruitment notice",
     "recruitment advertisement",
+    "recruitment notification",
     "vacancy",
     "vacancies",
     "advertisement",
     "job notification",
     "employment notification",
-    "recruitment notification",
     "appointment",
     "engagement",
     "career",
@@ -61,11 +62,12 @@ VACANCY_KEYWORDS = [
     "walk in interview",
     "gds",
     "agniveer",
-    "scholarship",
     "manpower",
     "staff recruitment",
     "direct recruitment",
-    "contractual recruitment"
+    "contractual recruitment",
+    "job",
+    "jobs"
 ]
 
 
@@ -90,11 +92,15 @@ STRONG_JOB_KEYWORDS = [
     "selection process",
     "eligibility criteria",
     "last date",
+    "last date to apply",
     "closing date",
     "application deadline",
     "advt",
     "advertisement no",
-    "recruitment notification"
+    "recruitment notification",
+    "number of posts",
+    "no. of posts",
+    "total posts"
 ]
 
 
@@ -135,43 +141,65 @@ IGNORE_KEYWORDS = [
 # QUALIFICATIONS
 # =========================================================
 
-QUALIFICATIONS = [
-    "10th pass",
-    "10th passed",
-    "class 10",
-    "class x",
-    "matric",
-    "matriculation",
-    "high school",
-
-    "12th pass",
-    "12th passed",
-    "class 12",
-    "class xii",
-    "higher secondary",
-    "hs pass",
-    "higher secondary pass",
-
-    "graduate",
-    "graduation",
-    "degree",
-    "bachelor",
-    "bachelor's",
-    "post graduate",
-    "postgraduate",
-    "master degree",
-    "master's degree",
-
-    "iti",
-    "diploma",
-    "engineering",
-    "b.tech",
-    "b.e",
-    "mbbs",
-    "nursing",
-    "gnm",
-    "anm",
-    "phd"
+QUALIFICATION_PATTERNS = [
+    ("10th Pass", [
+        "10th pass",
+        "10th passed",
+        "class 10",
+        "class x",
+        "matric",
+        "matriculation",
+        "high school"
+    ]),
+    ("12th Pass", [
+        "12th pass",
+        "12th passed",
+        "class 12",
+        "class xii",
+        "higher secondary",
+        "hs pass",
+        "higher secondary pass"
+    ]),
+    ("ITI", [
+        "iti",
+        "industrial training institute"
+    ]),
+    ("Diploma", [
+        "diploma"
+    ]),
+    ("Graduate", [
+        "graduate",
+        "graduation",
+        "bachelor",
+        "bachelor's degree",
+        "degree"
+    ]),
+    ("Post Graduate", [
+        "post graduate",
+        "postgraduate",
+        "master degree",
+        "master's degree"
+    ]),
+    ("Engineering", [
+        "b.tech",
+        "btech",
+        "b.e.",
+        "b.e ",
+        "engineering degree",
+        "engineering"
+    ]),
+    ("MBBS", [
+        "mbbs"
+    ]),
+    ("Nursing", [
+        "gnm",
+        "anm",
+        "nursing"
+    ]),
+    ("PhD", [
+        "phd",
+        "doctorate"
+    ])
 ]
 
 
@@ -185,13 +213,7 @@ def load_seen():
         return set(), False
 
     try:
-
-        with open(
-            SEEN_FILE,
-            "r",
-            encoding="utf-8"
-        ) as f:
-
+        with open(SEEN_FILE, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         if not isinstance(data, list):
@@ -200,9 +222,7 @@ def load_seen():
         return set(data), True
 
     except Exception as error:
-
         print(f"SEEN FILE ERROR: {error}")
-
         return set(), False
 
 
@@ -213,13 +233,7 @@ def load_seen():
 def save_seen(seen):
 
     try:
-
-        with open(
-            SEEN_FILE,
-            "w",
-            encoding="utf-8"
-        ) as f:
-
+        with open(SEEN_FILE, "w", encoding="utf-8") as f:
             json.dump(
                 sorted(seen),
                 f,
@@ -227,15 +241,10 @@ def save_seen(seen):
                 ensure_ascii=False
             )
 
-        print(
-            f"Saved {len(seen)} notification IDs."
-        )
+        print(f"Saved {len(seen)} notification IDs.")
 
     except Exception as error:
-
-        print(
-            f"SAVE SEEN ERROR: {error}"
-        )
+        print(f"SAVE SEEN ERROR: {error}")
 
 
 # =========================================================
@@ -244,10 +253,7 @@ def save_seen(seen):
 
 def send_telegram(message):
 
-    url = (
-        f"https://api.telegram.org/"
-        f"bot{BOT_TOKEN}/sendMessage"
-    )
+    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
 
     response = requests.post(
         url,
@@ -256,7 +262,7 @@ def send_telegram(message):
             "text": message,
             "disable_web_page_preview": False
         },
-        timeout=30
+        timeout=TELEGRAM_TIMEOUT
     )
 
     response.raise_for_status()
@@ -264,7 +270,6 @@ def send_telegram(message):
     result = response.json()
 
     if not result.get("ok"):
-
         raise RuntimeError(
             f"Telegram API error: {result}"
         )
@@ -279,16 +284,8 @@ def clean_text(text):
     if not text:
         return ""
 
-    text = text.replace(
-        "\xa0",
-        " "
-    )
-
-    text = re.sub(
-        r"\s+",
-        " ",
-        text
-    )
+    text = text.replace("\xa0", " ")
+    text = re.sub(r"\s+", " ", text)
 
     return text.strip()
 
@@ -329,7 +326,7 @@ def make_id(url, title):
 
 
 # =========================================================
-# LAST DATE EXTRACTION
+# DATE EXTRACTION
 # =========================================================
 
 def extract_last_date(text):
@@ -339,37 +336,37 @@ def extract_last_date(text):
 
     text = clean_text(text)
 
-    patterns = [
+    date_patterns = [
 
-        # DD/MM/YYYY
-        r"(?:last date|closing date|apply before|on or before|deadline)"
-        r"\s*(?:for application)?\s*[:\-]?\s*"
+        # 30/09/2026
+        r"(?:last date|closing date|apply before|on or before|deadline|last date to apply)"
+        r".{0,80}?"
         r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
 
-        # DD Month YYYY
-        r"(?:last date|closing date|apply before|on or before|deadline)"
-        r"\s*(?:for application)?\s*[:\-]?\s*"
-        r"(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})",
+        # 30.09.2026
+        r"(?:last date|closing date|apply before|on or before|deadline|last date to apply)"
+        r".{0,80}?"
+        r"(\d{1,2}\.\d{1,2}\.\d{2,4})",
 
-        # Month DD, YYYY
-        r"(?:last date|closing date|apply before|deadline)"
-        r"\s*(?:for application)?\s*[:\-]?\s*"
-        r"((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})",
+        # 30 September 2026
+        r"(?:last date|closing date|apply before|on or before|deadline|last date to apply)"
+        r".{0,80}?"
+        r"(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)"
+        r"(?:,)?\s+\d{4})",
 
-        # Applications upto DD/MM/YYYY
-        r"applications?.{0,100}?"
-        r"(?:upto|up to)"
-        r"\s*[:\-]?\s*"
-        r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
+        # September 30, 2026
+        r"(?:last date|closing date|apply before|on or before|deadline|last date to apply)"
+        r".{0,80}?"
+        r"((?:January|February|March|April|May|June|July|August|September|October|November|December)"
+        r"\s+\d{1,2}(?:,)?\s+\d{4})",
 
-        # Applications upto DD Month YYYY
-        r"applications?.{0,100}?"
-        r"(?:upto|up to)"
-        r"\s*[:\-]?\s*"
-        r"(\d{1,2}\s+[A-Za-z]+\s+\d{4})"
+        # 30-09-26
+        r"(?:last date|closing date|deadline)"
+        r".{0,80}?"
+        r"(\d{1,2}-\d{1,2}-\d{2,4})"
     ]
 
-    for pattern in patterns:
+    for pattern in date_patterns:
 
         match = re.search(
             pattern,
@@ -378,22 +375,25 @@ def extract_last_date(text):
         )
 
         if match:
+            return clean_text(match.group(1))
 
-            return clean_text(
-                match.group(1)
-            )
+    # Generic fallback
+    fallback_patterns = [
+        r"(\d{1,2}[/-]\d{1,2}[/-]\d{4})",
+        r"(\d{1,2}\.\d{1,2}\.\d{4})",
+        r"(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})"
+    ]
 
-    # Generic last date search
-    match = re.search(
-        r"last date.{0,120}?"
-        r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
-        text,
-        re.IGNORECASE
-    )
+    for pattern in fallback_patterns:
 
-    if match:
+        match = re.search(
+            pattern,
+            text,
+            re.IGNORECASE
+        )
 
-        return match.group(1)
+        if match:
+            return clean_text(match.group(1))
 
     return "Not mentioned"
 
@@ -411,42 +411,162 @@ def extract_qualification(text):
 
     found = []
 
-    for qualification in QUALIFICATIONS:
+    for label, patterns in QUALIFICATION_PATTERNS:
 
-        if qualification.lower() in text_lower:
+        for pattern in patterns:
 
-            if qualification not in found:
+            if pattern.lower() in text_lower:
 
-                found.append(
-                    qualification
-                )
-
-    if not found:
-
-        return "Not mentioned"
-
-    # Remove overlapping terms
-    result = []
-
-    for item in found:
-
-        overlapping = False
-
-        for existing in result:
-
-            if item.lower() in existing.lower():
-
-                overlapping = True
+                if label not in found:
+                    found.append(label)
 
                 break
 
-        if not overlapping:
+    if not found:
+        return "Not mentioned"
 
-            result.append(item)
+    return " / ".join(found[:6])
 
-    return ", ".join(
-        result[:6]
-    )
+
+# =========================================================
+# VACANCY / POSTS EXTRACTION
+# =========================================================
+
+def extract_vacancies(text):
+
+    if not text:
+        return "Not mentioned"
+
+    text = clean_text(text)
+
+    patterns = [
+
+        # No. of Posts: 25
+        r"(?:no\.?\s*of\s*posts|number\s*of\s*posts|total\s*posts|"
+        r"no\.?\s*of\s*vacancies|number\s*of\s*vacancies|"
+        r"total\s*vacancies)"
+        r"\s*[:\-]?\s*(\d{1,5})",
+
+        # 25 posts
+        r"\b(\d{1,5})\s+(?:posts|post|vacancies|vacancy)\b",
+
+        # 25 Nos.
+        r"\b(\d{1,5})\s+(?:nos\.?|numbers)\b"
+    ]
+
+    for pattern in patterns:
+
+        match = re.search(
+            pattern,
+            text,
+            re.IGNORECASE
+        )
+
+        if match:
+            return match.group(1)
+
+    return "Not mentioned"
+
+
+# =========================================================
+# AGE LIMIT EXTRACTION
+# =========================================================
+
+def extract_age_limit(text):
+
+    if not text:
+        return "Not mentioned"
+
+    text = clean_text(text)
+
+    patterns = [
+
+        # Age Limit: 18-30 years
+        r"(?:age\s*limit|age\s*criteria|age)"
+        r"\s*[:\-]?\s*"
+        r"(\d{1,2}\s*(?:to|-)\s*\d{1,2}\s*years?)",
+
+        # Minimum age 18 years
+        r"(?:minimum|min\.?)\s*age"
+        r"\s*[:\-]?\s*(\d{1,2}\s*years?)",
+
+        # Maximum age 30 years
+        r"(?:maximum|max\.?)\s*age"
+        r"\s*[:\-]?\s*(\d{1,2}\s*years?)",
+
+        # 18 years to 30 years
+        r"(\d{1,2}\s*years?)\s*(?:to|-)\s*(\d{1,2}\s*years?)"
+    ]
+
+    for pattern in patterns:
+
+        match = re.search(
+            pattern,
+            text,
+            re.IGNORECASE
+        )
+
+        if match:
+
+            if match.lastindex == 2:
+
+                return (
+                    f"{match.group(1)} to "
+                    f"{match.group(2)}"
+                )
+
+            return clean_text(
+                match.group(1)
+            )
+
+    return "Not mentioned"
+
+
+# =========================================================
+# SALARY / PAY EXTRACTION
+# =========================================================
+
+def extract_salary(text):
+
+    if not text:
+        return "Not mentioned"
+
+    text = clean_text(text)
+
+    patterns = [
+
+        # ₹25,500 - ₹81,100
+        r"(?:₹|rs\.?|inr)\s*"
+        r"[\d,]+"
+        r"\s*(?:-|to|–|—)\s*"
+        r"(?:₹|rs\.?|inr)?\s*[\d,]+",
+
+        # Pay Scale: 19900-63200
+        r"(?:pay\s*scale|pay\s*level|salary|remuneration|"
+        r"consolidated\s*pay)"
+        r"\s*[:\-]?\s*"
+        r"(?:₹|rs\.?|inr)?\s*[\d,]+"
+        r"(?:\s*(?:-|to|–|—)\s*(?:₹|rs\.?|inr)?\s*[\d,]+)?",
+
+        # ₹30,000 per month
+        r"(?:₹|rs\.?|inr)\s*[\d,]+"
+        r"(?:\s*per\s*month)?"
+    ]
+
+    for pattern in patterns:
+
+        match = re.search(
+            pattern,
+            text,
+            re.IGNORECASE
+        )
+
+        if match:
+            return clean_text(
+                match.group(0)
+            )
+
+    return "Not mentioned"
 
 
 # =========================================================
@@ -457,9 +577,7 @@ def extract_pdf_text(url):
 
     try:
 
-        print(
-            f"Reading PDF: {url}"
-        )
+        print(f"Reading PDF: {url}")
 
         response = requests.get(
             url,
@@ -516,29 +634,19 @@ def is_vacancy(
     website_keywords=None
 ):
 
-    title_clean = clean_text(
-        title
-    )
+    title_clean = clean_text(title)
+
+    title_lower = title_clean.lower()
+
+    # Never allow obvious non-job titles
+    for keyword in IGNORE_KEYWORDS:
+
+        if keyword in title_lower:
+            return False
 
     combined = clean_text(
         f"{title} {url} {page_text}"
     ).lower()
-
-    title_lower = title_clean.lower()
-
-    # ---------------------------------------------
-    # Ignore irrelevant titles
-    # ---------------------------------------------
-
-    for keyword in IGNORE_KEYWORDS:
-
-        if keyword in title_lower:
-
-            return False
-
-    # ---------------------------------------------
-    # Website specific keywords
-    # ---------------------------------------------
 
     custom_keywords = []
 
@@ -550,19 +658,13 @@ def is_vacancy(
             if str(keyword).strip()
         ]
 
-    # ---------------------------------------------
     # Strong indicators
-    # ---------------------------------------------
-
-    has_strong_indicator = any(
+    strong_match = any(
         keyword in combined
         for keyword in STRONG_JOB_KEYWORDS
     )
 
-    # ---------------------------------------------
     # General indicators
-    # ---------------------------------------------
-
     all_keywords = list(
         dict.fromkeys(
             VACANCY_KEYWORDS
@@ -570,26 +672,16 @@ def is_vacancy(
         )
     )
 
-    has_general_indicator = any(
+    general_match = any(
         keyword in combined
         for keyword in all_keywords
     )
 
-    if not has_general_indicator:
-
+    if not general_match:
         return False
 
-    # ---------------------------------------------
-    # Strong match = vacancy
-    # ---------------------------------------------
-
-    if has_strong_indicator:
-
+    if strong_match:
         return True
-
-    # ---------------------------------------------
-    # Weak match requires context
-    # ---------------------------------------------
 
     context_keywords = [
         "eligible",
@@ -598,11 +690,14 @@ def is_vacancy(
         "age limit",
         "salary",
         "pay scale",
+        "pay level",
         "application fee",
         "how to apply",
         "selection",
         "exam",
-        "interview"
+        "interview",
+        "posts",
+        "vacancies"
     ]
 
     context_count = sum(
@@ -646,6 +741,9 @@ def get_links(site):
     print(f"URL: {base_url}")
     print("=" * 60)
 
+    if not base_url:
+        return []
+
     response = requests.get(
         base_url,
         headers=HEADERS,
@@ -685,7 +783,6 @@ def get_links(site):
         )
 
         if not title or not href:
-
             continue
 
         if href.startswith(
@@ -696,7 +793,6 @@ def get_links(site):
                 "#"
             )
         ):
-
             continue
 
         clean_href = (
@@ -704,11 +800,23 @@ def get_links(site):
             .split("?")[0]
         )
 
-        page_text = ""
+        # Ignore obviously useless links
+        if clean_href.endswith(
+            (
+                ".jpg",
+                ".jpeg",
+                ".png",
+                ".gif",
+                ".zip",
+                ".doc",
+                ".docx",
+                ".xls",
+                ".xlsx"
+            )
+        ):
+            continue
 
-        # -----------------------------------------
-        # Read PDF notification
-        # -----------------------------------------
+        page_text = ""
 
         if clean_href.endswith(".pdf"):
 
@@ -716,58 +824,45 @@ def get_links(site):
                 href
             )
 
-        # -----------------------------------------
-        # Detect vacancy
-        # -----------------------------------------
-
         if not is_vacancy(
             title,
             href,
             page_text,
             website_keywords
         ):
-
             continue
 
         source_text = clean_text(
             f"{title} {page_text}"
         )
 
-        last_date = extract_last_date(
-            source_text
-        )
-
-        qualification = extract_qualification(
-            source_text
-        )
-
         item = {
-
             "id": make_id(
                 href,
                 title
             ),
-
             "title": title,
-
             "url": href,
-
             "category": category,
-
             "source": name,
-
-            "last_date": last_date,
-
-            "qualification": qualification
+            "last_date": extract_last_date(
+                source_text
+            ),
+            "qualification": extract_qualification(
+                source_text
+            ),
+            "vacancies": extract_vacancies(
+                source_text
+            ),
+            "age_limit": extract_age_limit(
+                source_text
+            ),
+            "salary": extract_salary(
+                source_text
+            )
         }
 
-        results.append(
-            item
-        )
-
-    # ---------------------------------------------
-    # Remove duplicates
-    # ---------------------------------------------
+        results.append(item)
 
     unique_results = {}
 
@@ -801,8 +896,17 @@ def create_message(item):
         f"📌 Notification\n"
         f"{item['title']}\n\n"
 
+        f"👥 Total Posts\n"
+        f"{item['vacancies']}\n\n"
+
         f"🎓 Qualification\n"
         f"{item['qualification']}\n\n"
+
+        f"🎂 Age Limit\n"
+        f"{item['age_limit']}\n\n"
+
+        f"💰 Salary / Pay\n"
+        f"{item['salary']}\n\n"
 
         f"📅 Last Date\n"
         f"{item['last_date']}\n\n"
@@ -832,9 +936,9 @@ def main():
 
     print("=" * 60)
 
-    # ---------------------------------------------
-    # Load websites.json
-    # ---------------------------------------------
+    # -----------------------------------------------------
+    # Load websites
+    # -----------------------------------------------------
 
     try:
 
@@ -868,9 +972,9 @@ def main():
         f"{len(websites)}"
     )
 
-    # ---------------------------------------------
-    # Load seen.json
-    # ---------------------------------------------
+    # -----------------------------------------------------
+    # Load history
+    # -----------------------------------------------------
 
     seen, has_baseline = load_seen()
 
@@ -879,23 +983,19 @@ def main():
         f"{len(seen)}"
     )
 
-    all_found = []
+    # -----------------------------------------------------
+    # Check every website
+    # -----------------------------------------------------
 
-    # ---------------------------------------------
-    # Check all websites
-    # ---------------------------------------------
+    all_found = []
 
     for site in websites:
 
         try:
 
-            items = get_links(
-                site
-            )
+            items = get_links(site)
 
-            all_found.extend(
-                items
-            )
+            all_found.extend(items)
 
             print(
                 f"{site.get('name', 'Unknown')}: "
@@ -910,15 +1010,14 @@ def main():
             )
 
     print("")
-
     print(
         f"Total vacancy items found: "
         f"{len(all_found)}"
     )
 
-    # ---------------------------------------------
-    # First run
-    # ---------------------------------------------
+    # -----------------------------------------------------
+    # First run = baseline
+    # -----------------------------------------------------
 
     if not has_baseline:
 
@@ -927,12 +1026,9 @@ def main():
             for item in all_found
         }
 
-        save_seen(
-            initial_ids
-        )
+        save_seen(initial_ids)
 
         print("")
-
         print(
             f"Baseline created: "
             f"{len(initial_ids)} items"
@@ -948,52 +1044,41 @@ def main():
 
         return
 
-    # ---------------------------------------------
-    # Find NEW notifications
-    # ---------------------------------------------
+    # -----------------------------------------------------
+    # Find new vacancies
+    # -----------------------------------------------------
 
     new_items = []
 
     for item in all_found:
 
         if item["id"] in seen:
-
             continue
 
-        new_items.append(
-            item
-        )
+        new_items.append(item)
 
     print("")
-
     print(
         f"NEW vacancy items: "
         f"{len(new_items)}"
     )
 
-    # ---------------------------------------------
+    # -----------------------------------------------------
     # Send Telegram alerts
-    # ---------------------------------------------
+    # -----------------------------------------------------
 
     successfully_sent = 0
 
-    for item in new_items[
-        :MAX_TELEGRAM_ALERTS
-    ]:
+    for item in new_items[:MAX_TELEGRAM_ALERTS]:
 
-        message = create_message(
-            item
-        )
+        message = create_message(item)
 
         try:
 
-            send_telegram(
-                message
-            )
+            send_telegram(message)
 
             successfully_sent += 1
 
-            # Mark seen only after successful send
             seen.add(
                 item["id"]
             )
@@ -1011,16 +1096,15 @@ def main():
                 f"{error}"
             )
 
-    # ---------------------------------------------
-    # Save notification history
-    # ---------------------------------------------
+    # -----------------------------------------------------
+    # IMPORTANT:
+    # Only successfully sent notifications are added.
+    # Failed Telegram messages will be retried next run.
+    # -----------------------------------------------------
 
-    save_seen(
-        seen
-    )
+    save_seen(seen)
 
     print("")
-
     print("=" * 60)
 
     print(
@@ -1036,7 +1120,7 @@ def main():
 
 
 # =========================================================
-# START BOT
+# START
 # =========================================================
 
 if __name__ == "__main__":
