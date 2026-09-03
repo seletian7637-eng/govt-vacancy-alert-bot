@@ -3,84 +3,216 @@
     "name": "UPSC Recruitment",
     "category": "Central Govt",
     "url": "https://www.upsc.gov.in/recruitment/recruitment-advertisement",
-    "keywords": ["advertisement", "recruitment", "vacancy", "post"]
+    "keywords": ["advertisement", "recruitment", "vacancy", "post", "notification"]
   },
   {
     "name": "SSC",
     "category": "Central Govt",
     "url": "https://ssc.gov.in/",
-    "keywords": ["notice", "notification", "recruitment", "vacancy"]
+    "keywords": ["notice", "notification", "recruitment", "vacancy", "examination", "selection"]
   },
   {
     "name": "IBPS",
-    "category": "Central Govt",
+    "category": "Banking",
     "url": "https://www.ibps.in/",
-    "keywords": ["notification", "apply", "recruitment", "CRP", "vacancy"]
+    "keywords": ["notification", "apply", "recruitment", "CRP", "vacancy", "online"]
   },
   {
     "name": "India Post Vacancies",
     "category": "Central Govt",
     "url": "https://www.indiapost.gov.in/vacancies",
-    "keywords": ["notification", "vacancy", "recruitment", "post", "GDS"]
+    "keywords": ["notification", "vacancy", "recruitment", "post", "GDS", "driver", "artisan"]
   },
   {
-    "name": "Assam Niyukti",
-    "category": "Assam Govt",
-    "url": "https://niyukti.assam.gov.in/all_jobs.php",
-    "keywords": ["recruitment", "vacancy", "job", "post", "apply"]
+    "name": "Employment News",
+    "category": "Central Govt",
+    "url": "https://employmentnews.gov.in/newemp/home.aspx",
+    "keywords": ["job", "recruitment", "vacancy", "employment", "last date", "post"]
   },
   {
-    "name": "APSC",
-    "category": "Assam Govt",
-    "url": "https://apsc.nic.in/",
-    "keywords": ["advertisement", "recruitment", "vacancy", "notification"]
+    "name": "National Career Service Government Jobs",
+    "category": "Central Govt",
+    "url": "https://www.ncs.gov.in/Pages/Govt-Job-Vacancies.aspx",
+    "keywords": ["government job", "vacancy", "recruitment", "job", "employment"]
   },
   {
-    "name": "NHM Assam Recruitment",
-    "category": "Assam Govt",
-    "url": "https://nhm.assam.gov.in/portlets/recruitment",
-    "keywords": ["recruitment", "vacancy", "advertisement", "post"]
+    "name": "Ministry of Home Affairs Vacancies",
+    "category": "Central Govt",
+    "url": "https://www.mha.gov.in/en/notifications/vacancies",
+    "keywords": ["vacancy", "recruitment", "engagement", "post", "appointment"]
   },
   {
-    "name": "Assam Government",
-    "category": "Assam Govt",
-    "url": "https://assam.gov.in/",
-    "keywords": ["recruitment", "vacancy", "appointment", "notification"]
+    "name": "Ministry of External Affairs Vacancies",
+    "category": "Central Govt",
+    "url": "https://www.mea.gov.in/vacancies.htm",
+    "keywords": ["vacancy", "career", "recruitment", "post", "appointment"]
   },
   {
-    "name": "Central Selection Board BTC",
-    "category": "BTC/BTR",
-    "url": "https://www.centralselectionboard.com/",
-    "keywords": ["recruitment", "advertisement", "vacancy", "apply", "post"]
+    "name": "Railway Recruitment Control Board",
+    "category": "Railway",
+    "url": "https://www.rrcb.gov.in/",
+    "keywords": ["employment notice", "recruitment", "CEN", "vacancy", "notification", "railway"]
   },
   {
-    "name": "Indian Coast Guard",
+    "name": "RRB Bhubaneswar",
+    "category": "Railway",
+    "url": "https://rrbbbs.gov.in/",
+    "keywords": ["recruitment", "CEN", "notification", "vacancy", "notice"]
+  },
+  {
+    "name": "DRDO Vacancies",
     "category": "Defence",
-    "url": "https://indiancoastguard.gov.in/recruitment",
-    "keywords": ["recruitment", "advertisement", "vacancy", "post"]
+    "url": "https://www.drdo.gov.in/drdo/offerings/vacancies",
+    "keywords": ["vacancy", "recruitment", "apprentice", "JRF", "RA", "application", "walk-in"]
   },
   {
-    "name": "Indian Air Force",
+    "name": "Indian Coast Guard Recruitment",
+    "category": "Defence",
+    "url": "https://www.indiancoastguard.gov.in/recruitment",
+    "keywords": ["recruitment", "advertisement", "vacancy", "post", "civilian"]
+  },
+  {
+    "name": "Indian Air Force Career",
     "category": "Defence",
     "url": "https://careerairforce.gov.in/",
-    "keywords": ["job", "recruitment", "agniveervayu", "vacancy", "career"]
+    "keywords": ["job", "recruitment", "agniveervayu", "vacancy", "career", "application"]
   },
   {
     "name": "Indian Navy",
     "category": "Defence",
     "url": "https://www.joinindiannavy.gov.in/",
-    "keywords": ["recruitment", "application", "agniveer", "officer", "vacancy"]
+    "keywords": ["recruitment", "application", "agniveer", "officer", "vacancy", "career"]
+  },
+  {
+    "name": "Indian Army Recruitment",
+    "category": "Defence",
+    "url": "https://joinindianarmy.nic.in/",
+    "keywords": ["recruitment", "join", "agniveer", "soldier", "vacancy", "notification", "rally"]
+  },
+  {
+    "name": "Assam Niyukti",
+    "category": "Assam Govt",
+    "url": "https://niyukti.assam.gov.in/all_jobs.php",
+    "keywords": ["recruitment", "vacancy", "job", "post", "apply", "advertisement"]
+  },
+  {
+    "name": "APSC",
+    "category": "Assam Govt",
+    "url": "https://apsc.nic.in/",
+    "keywords": ["advertisement", "recruitment", "vacancy", "notification", "post", "application"]
+  },
+  {
+    "name": "NHM Assam Recruitment",
+    "category": "Assam Govt",
+    "url": "https://nhm.assam.gov.in/portlets/recruitment",
+    "keywords": ["recruitment", "vacancy", "advertisement", "post", "career", "walk-in"]
+  },
+  {
+    "name": "Assam Government",
+    "category": "Assam Govt",
+    "url": "https://assam.gov.in/",
+    "keywords": ["recruitment", "vacancy", "appointment", "notification", "job", "career"]
+  },
+  {
+    "name": "DME Assam Recruitment",
+    "category": "Assam Govt",
+    "url": "https://dme.assam.gov.in/documents/recruitment",
+    "keywords": ["recruitment", "vacancy", "appointment", "selection", "post", "advertisement"]
+  },
+  {
+    "name": "Samagra Shiksha Axom Recruitment",
+    "category": "Assam Govt",
+    "url": "https://ssa.assam.gov.in/information-services/recruitment-notice",
+    "keywords": ["recruitment", "recruitment notice", "vacancy", "teacher", "post", "application"]
+  },
+  {
+    "name": "Samagra Shiksha Axom Recruitment Portal",
+    "category": "Assam Govt",
+    "url": "https://ssa.assam.gov.in/information-services/detail/recruitment-portal-0",
+    "keywords": ["recruitment", "vacancy", "application", "teacher", "post"]
+  },
+  {
+    "name": "Assam Skill Development Mission",
+    "category": "Assam Govt",
+    "url": "https://asdm.assam.gov.in/portlets/recruitment-career",
+    "keywords": ["recruitment", "career", "vacancy", "employment", "assistant", "project"]
+  },
+  {
+    "name": "Central Selection Board BTC",
+    "category": "BTC/BTR",
+    "url": "https://www.centralselectionboard.com/",
+    "keywords": ["recruitment", "advertisement", "vacancy", "apply", "post", "BTC"]
+  },
+  {
+    "name": "Directorate of Education BTC",
+    "category": "BTC/BTR",
+    "url": "https://education.bodoland.gov.in/",
+    "keywords": ["recruitment", "vacancy", "teacher", "appointment", "notification", "post"]
+  },
+  {
+    "name": "BTC Government",
+    "category": "BTC/BTR",
+    "url": "https://bodoland.gov.in/",
+    "keywords": ["recruitment", "vacancy", "appointment", "notification", "career", "job"]
   },
   {
     "name": "National Scholarship Portal",
     "category": "Scholarship",
     "url": "https://scholarships.gov.in/All-Scholarships",
-    "keywords": ["scholarship", "scheme", "application", "student", "open"]
+    "keywords": ["scholarship", "scheme", "application", "student", "open", "renewal"]
   },
   {
     "name": "Assam Scholarship - Sewa Setu",
     "category": "Scholarship",
     "url": "https://sewasetu.assam.gov.in/site/service-apply/apply-for-scholarship",
-    "keywords": ["scholarship", "application", "student", "scheme"]
+    "keywords": ["scholarship", "application", "student", "scheme", "education"]
+  },
+  {
+    "name": "PIB Government Recruitment",
+    "category": "Central Govt",
+    "url": "https://www.pib.gov.in/",
+    "keywords": ["recruitment", "vacancy", "appointment", "government jobs", "post"]
+  },
+  {
+    "name": "Ministry of Defence",
+    "category": "Defence",
+    "url": "https://www.mod.gov.in/",
+    "keywords": ["vacancy", "recruitment", "appointment", "civilian", "post"]
+  },
+  {
+    "name": "Border Roads Organisation",
+    "category": "Defence",
+    "url": "https://bro.gov.in/",
+    "keywords": ["recruitment", "vacancy", "advertisement", "post", "application"]
+  },
+  {
+    "name": "Rashtriya Chemicals and Fertilizers",
+    "category": "Central PSU",
+    "url": "https://www.rcfltd.com/",
+    "keywords": ["career", "recruitment", "vacancy", "job", "apprentice", "trainee"]
+  },
+  {
+    "name": "Airport Authority of India",
+    "category": "Central PSU",
+    "url": "https://www.aai.aero/en/careers/recruitment",
+    "keywords": ["recruitment", "career", "vacancy", "junior executive", "application"]
+  },
+  {
+    "name": "LIC Careers",
+    "category": "Central PSU",
+    "url": "https://licindia.in/careers",
+    "keywords": ["recruitment", "career", "vacancy", "apprentice", "officer", "assistant"]
+  },
+  {
+    "name": "Coal India Careers",
+    "category": "Central PSU",
+    "url": "https://www.coalindia.in/career-cil/",
+    "keywords": ["recruitment", "career", "vacancy", "management trainee", "apprentice", "post"]
+  },
+  {
+    "name": "ONGC Careers",
+    "category": "Central PSU",
+    "url": "https://ongcindia.com/web/eng/career",
+    "keywords": ["career", "recruitment", "vacancy", "apprentice", "graduate", "post"]
   }
 ]
