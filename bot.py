@@ -1,12 +1,14 @@
+```python
 import os
 import json
 import hashlib
 import re
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 from pypdf import PdfReader
 from io import BytesIO
+from datetime import datetime
 
 
 # =========================================================
@@ -22,8 +24,7 @@ SEEN_FILE = "seen.json"
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 "
-        "(KHTML, like Gecko) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/120 Safari/537.36"
     )
 }
@@ -35,7 +36,7 @@ MAX_TELEGRAM_ALERTS = 10
 
 
 # =========================================================
-# GENERAL VACANCY KEYWORDS
+# VACANCY KEYWORDS
 # =========================================================
 
 VACANCY_KEYWORDS = [
@@ -45,27 +46,55 @@ VACANCY_KEYWORDS = [
     "vacancy",
     "vacancies",
     "advertisement",
-    "notification",
-    "notice",
-    "job",
-    "jobs",
+    "job notification",
+    "employment notification",
+    "recruitment notification",
     "appointment",
     "engagement",
     "career",
-    "careers",
     "apply online",
-    "application",
-    "applications",
-    "selection",
-    "post",
-    "posts",
-    "employment",
-    "joining",
-    "walk-in",
-    "walk in",
-    "agniveer",
+    "application invited",
+    "applications are invited",
+    "online application",
+    "selection process",
+    "walk-in interview",
+    "walk in interview",
     "gds",
-    "scholarship"
+    "agniveer",
+    "scholarship",
+    "manpower",
+    "staff recruitment",
+    "direct recruitment",
+    "contractual recruitment"
+]
+
+
+# =========================================================
+# STRONG JOB INDICATORS
+# =========================================================
+
+STRONG_JOB_KEYWORDS = [
+    "recruitment",
+    "vacancy",
+    "vacancies",
+    "apply online",
+    "applications are invited",
+    "application invited",
+    "online application",
+    "post of",
+    "posts of",
+    "appointment",
+    "engagement",
+    "walk-in interview",
+    "walk in interview",
+    "selection process",
+    "eligibility criteria",
+    "last date",
+    "closing date",
+    "application deadline",
+    "advt",
+    "advertisement no",
+    "recruitment notification"
 ]
 
 
@@ -75,37 +104,54 @@ VACANCY_KEYWORDS = [
 
 IGNORE_KEYWORDS = [
     "tender",
+    "tenders",
     "procurement",
     "quotation",
     "auction",
     "corrigendum to tender",
     "press release",
-    "meeting",
-    "transfer",
-    "promotion",
-    "seniority",
+    "press note",
+    "meeting notice",
+    "transfer order",
+    "transfer list",
+    "promotion order",
+    "seniority list",
     "answer key",
-    "admit card"
+    "admit card",
+    "hall ticket",
+    "result",
+    "results",
+    "merit list",
+    "selected candidates",
+    "joining order",
+    "retirement",
+    "holiday notice",
+    "calendar",
+    "minutes of meeting"
 ]
 
 
 # =========================================================
-# QUALIFICATION KEYWORDS
+# QUALIFICATIONS
 # =========================================================
 
 QUALIFICATIONS = [
     "10th pass",
     "10th passed",
     "class 10",
+    "class x",
     "matric",
     "matriculation",
     "high school",
+
     "12th pass",
     "12th passed",
     "class 12",
+    "class xii",
     "higher secondary",
     "hs pass",
     "higher secondary pass",
+
     "graduate",
     "graduation",
     "degree",
@@ -115,26 +161,37 @@ QUALIFICATIONS = [
     "postgraduate",
     "master degree",
     "master's degree",
+
     "iti",
     "diploma",
     "engineering",
     "b.tech",
     "b.e",
     "mbbs",
-    "nursing"
+    "nursing",
+    "gnm",
+    "anm",
+    "phd"
 ]
 
 
 # =========================================================
-# LOAD SEEN DATA
+# LOAD SEEN
 # =========================================================
 
 def load_seen():
+
     if not os.path.exists(SEEN_FILE):
         return set(), False
 
     try:
-        with open(SEEN_FILE, "r", encoding="utf-8") as f:
+
+        with open(
+            SEEN_FILE,
+            "r",
+            encoding="utf-8"
+        ) as f:
+
             data = json.load(f)
 
         if not isinstance(data, list):
@@ -143,13 +200,22 @@ def load_seen():
         return set(data), True
 
     except Exception as error:
+
         print(f"SEEN FILE ERROR: {error}")
+
         return set(), False
 
 
 def save_seen(seen):
+
     try:
-        with open(SEEN_FILE, "w", encoding="utf-8") as f:
+
+        with open(
+            SEEN_FILE,
+            "w",
+            encoding="utf-8"
+        ) as f:
+
             json.dump(
                 sorted(seen),
                 f,
@@ -157,10 +223,15 @@ def save_seen(seen):
                 ensure_ascii=False
             )
 
-        print(f"Saved {len(seen)} notification IDs.")
+        print(
+            f"Saved {len(seen)} notification IDs."
+        )
 
     except Exception as error:
-        print(f"SAVE SEEN ERROR: {error}")
+
+        print(
+            f"SAVE SEEN ERROR: {error}"
+        )
 
 
 # =========================================================
@@ -168,7 +239,11 @@ def save_seen(seen):
 # =========================================================
 
 def send_telegram(message):
-    url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
+
+    url = (
+        f"https://api.telegram.org/"
+        f"bot{BOT_TOKEN}/sendMessage"
+    )
 
     response = requests.post(
         url,
@@ -185,17 +260,37 @@ def send_telegram(message):
     result = response.json()
 
     if not result.get("ok"):
+
         raise RuntimeError(
             f"Telegram API error: {result}"
         )
 
 
 # =========================================================
-# CREATE UNIQUE ID
+# UNIQUE ID
 # =========================================================
 
+def normalize_url(url):
+
+    url = url.strip()
+
+    parsed = urlparse(url)
+
+    clean = (
+        f"{parsed.scheme}://"
+        f"{parsed.netloc}"
+        f"{parsed.path}"
+    )
+
+    return clean.rstrip("/")
+
+
 def make_id(url, title):
-    value = f"{url.strip()}|{title.strip()}"
+
+    value = (
+        f"{normalize_url(url)}|"
+        f"{clean_text(title).lower()}"
+    )
 
     return hashlib.sha256(
         value.encode("utf-8")
@@ -207,8 +302,14 @@ def make_id(url, title):
 # =========================================================
 
 def clean_text(text):
+
     if not text:
         return ""
+
+    text = text.replace(
+        "\xa0",
+        " "
+    )
 
     text = re.sub(
         r"\s+",
@@ -220,36 +321,47 @@ def clean_text(text):
 
 
 # =========================================================
-# LAST DATE EXTRACTION
+# LAST DATE
 # =========================================================
 
 def extract_last_date(text):
+
     if not text:
         return "Not mentioned"
 
     text = clean_text(text)
 
     patterns = [
-        r"last date\s*(?:for application)?\s*[:\-]?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
-        r"last date\s*(?:for application)?\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
 
-        r"closing date\s*[:\-]?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
-        r"closing date\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
+        # DD/MM/YYYY
+        r"(?:last date|closing date|apply before|on or before|deadline)"
+        r"\s*(?:for application)?\s*[:\-]?\s*"
+        r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
 
-        r"apply before\s*[:\-]?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
-        r"apply before\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
+        # DD Month YYYY
+        r"(?:last date|closing date|apply before|on or before|deadline)"
+        r"\s*(?:for application)?\s*[:\-]?\s*"
+        r"(\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4})",
 
-        r"on or before\s*[:\-]?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
-        r"on or before\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
+        # Month DD, YYYY
+        r"(?:last date|closing date|apply before|deadline)"
+        r"\s*(?:for application)?\s*[:\-]?\s*"
+        r"((?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},?\s+\d{4})",
 
-        r"applications.*?upto\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
-        r"applications.*?upto\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})",
+        # Applications upto
+        r"applications?.{0,100}?"
+        r"(?:upto|up to)"
+        r"\s*[:\-]?\s*"
+        r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
 
-        r"application.*?deadline\s*[:\-]?\s*(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
-        r"application.*?deadline\s*[:\-]?\s*(\d{1,2}\s+[A-Za-z]+\s+\d{4})"
+        r"applications?.{0,100}?"
+        r"(?:upto|up to)"
+        r"\s*[:\-]?\s*"
+        r"(\d{1,2}\s+[A-Za-z]+\s+\d{4})"
     ]
 
     for pattern in patterns:
+
         match = re.search(
             pattern,
             text,
@@ -257,16 +369,30 @@ def extract_last_date(text):
         )
 
         if match:
-            return match.group(1)
+            return clean_text(
+                match.group(1)
+            )
+
+    # Generic date search near "last date"
+    match = re.search(
+        r"last date.{0,120}?"
+        r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4})",
+        text,
+        re.IGNORECASE
+    )
+
+    if match:
+        return match.group(1)
 
     return "Not mentioned"
 
 
 # =========================================================
-# QUALIFICATION EXTRACTION
+# QUALIFICATION
 # =========================================================
 
 def extract_qualification(text):
+
     if not text:
         return "Not mentioned"
 
@@ -275,28 +401,49 @@ def extract_qualification(text):
     found = []
 
     for qualification in QUALIFICATIONS:
-        if qualification.lower() in text_lower:
-            found.append(qualification)
 
-    unique = []
+        if qualification.lower() in text_lower:
+
+            if qualification not in found:
+                found.append(
+                    qualification
+                )
+
+    if not found:
+        return "Not mentioned"
+
+    # Remove duplicate / overlapping terms
+    result = []
 
     for item in found:
-        if item not in unique:
-            unique.append(item)
 
-    if unique:
-        return ", ".join(unique[:6])
+        overlapping = False
 
-    return "Not mentioned"
+        for existing in result:
+
+            if item.lower() in existing.lower():
+                overlapping = True
+                break
+
+        if not overlapping:
+            result.append(item)
+
+    return ", ".join(
+        result[:6]
+    )
 
 
 # =========================================================
-# PDF TEXT EXTRACTION
+# PDF EXTRACTION
 # =========================================================
 
 def extract_pdf_text(url):
+
     try:
-        print(f"Reading PDF: {url}")
+
+        print(
+            f"Reading PDF: {url}"
+        )
 
         response = requests.get(
             url,
@@ -313,11 +460,18 @@ def extract_pdf_text(url):
         text = ""
 
         for page in reader.pages[:MAX_PDF_PAGES]:
+
             try:
-                page_text = page.extract_text() or ""
+
+                page_text = (
+                    page.extract_text()
+                    or ""
+                )
+
                 text += " " + page_text
 
             except Exception as error:
+
                 print(
                     f"PDF PAGE ERROR: {error}"
                 )
@@ -327,6 +481,7 @@ def extract_pdf_text(url):
         )
 
     except Exception as error:
+
         print(
             f"PDF ERROR: {url} -> {error}"
         )
@@ -345,52 +500,100 @@ def is_vacancy(
     website_keywords=None
 ):
 
+    title_clean = clean_text(
+        title
+    )
+
     combined = clean_text(
         f"{title} {url} {page_text}"
     ).lower()
 
+    title_lower = title_clean.lower()
+
+    # ---------------------------------------------
+    # Reject clearly irrelevant titles
+    # ---------------------------------------------
+
+    for keyword in IGNORE_KEYWORDS:
+
+        if keyword in title_lower:
+            return False
+
+    # ---------------------------------------------
     # Website-specific keywords
+    # ---------------------------------------------
+
     custom_keywords = []
 
     if website_keywords:
+
         custom_keywords = [
-            str(keyword).lower()
+            str(keyword).lower().strip()
             for keyword in website_keywords
+            if str(keyword).strip()
         ]
+
+    # ---------------------------------------------
+    # Strong job indicator
+    # ---------------------------------------------
+
+    has_strong_indicator = any(
+        keyword in combined
+        for keyword in STRONG_JOB_KEYWORDS
+    )
+
+    # ---------------------------------------------
+    # General/custom indicator
+    # ---------------------------------------------
 
     all_keywords = list(
         dict.fromkeys(
-            VACANCY_KEYWORDS + custom_keywords
+            VACANCY_KEYWORDS
+            + custom_keywords
         )
     )
 
-    has_vacancy_keyword = any(
+    has_general_indicator = any(
         keyword in combined
         for keyword in all_keywords
     )
 
-    if not has_vacancy_keyword:
+    if not has_general_indicator:
         return False
 
-    # Ignore only when the title itself clearly
-    # indicates a non-recruitment document.
-    title_lower = title.lower()
+    # ---------------------------------------------
+    # If page has strong indicator → accept
+    # ---------------------------------------------
 
-    strong_ignore = [
-        "tender",
-        "procurement",
-        "quotation",
-        "auction",
-        "corrigendum to tender"
+    if has_strong_indicator:
+        return True
+
+    # ---------------------------------------------
+    # For weaker matches require application/
+    # recruitment context.
+    # ---------------------------------------------
+
+    context_keywords = [
+        "eligible",
+        "eligibility",
+        "qualification",
+        "age limit",
+        "salary",
+        "pay scale",
+        "application fee",
+        "how to apply",
+        "selection",
+        "exam",
+        "interview"
     ]
 
-    if any(
-        keyword in title_lower
-        for keyword in strong_ignore
-    ):
-        return False
+    context_count = sum(
+        1
+        for keyword in context_keywords
+        if keyword in combined
+    )
 
-    return True
+    return context_count >= 1
 
 
 # =========================================================
@@ -463,13 +666,9 @@ def get_links(site):
             link.get("href", "")
         )
 
-        if not title:
+        if not title or not href:
             continue
 
-        if not href:
-            continue
-
-        # Ignore non-web links
         if href.startswith(
             (
                 "javascript:",
@@ -480,10 +679,14 @@ def get_links(site):
         ):
             continue
 
-        page_text = ""
+        # Ignore common file types that aren't useful
+        # for vacancy detection.
+        clean_href = (
+            href.lower()
+            .split("?")[0]
+        )
 
-        # PDF
-        clean_href = href.lower().split("?")[0]
+        page_text = ""
 
         if clean_href.endswith(".pdf"):
 
@@ -491,7 +694,6 @@ def get_links(site):
                 href
             )
 
-        # Vacancy filter
         if not is_vacancy(
             title,
             href,
@@ -500,8 +702,7 @@ def get_links(site):
         ):
             continue
 
-        # Extract information
-        source_text = (
+        source_text = clean_text(
             f"{title} {page_text}"
         )
 
@@ -526,13 +727,18 @@ def get_links(site):
             "qualification": qualification
         }
 
-        results.append(item)
+        results.append(
+            item
+        )
 
     # Remove duplicates
     unique_results = {}
 
     for item in results:
-        unique_results[item["id"]] = item
+
+        unique_results[
+            item["id"]
+        ] = item
 
     return list(
         unique_results.values()
@@ -546,17 +752,28 @@ def get_links(site):
 def create_message(item):
 
     return (
-        "🚨 NEW GOVERNMENT VACANCY\n\n"
-        f"📂 Category: {item['category']}\n"
-        f"🏢 Organization: {item['source']}\n\n"
-        f"📌 Notification:\n"
+        "🚨 NEW GOVERNMENT JOB ALERT\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+
+        f"🏢 Organization\n"
+        f"{item['source']}\n\n"
+
+        f"📂 Category\n"
+        f"{item['category']}\n\n"
+
+        f"📌 Notification\n"
         f"{item['title']}\n\n"
-        f"🎓 Qualification:\n"
+
+        f"🎓 Qualification\n"
         f"{item['qualification']}\n\n"
-        f"📅 Last Date:\n"
+
+        f"📅 Last Date\n"
         f"{item['last_date']}\n\n"
-        f"🔗 Official Notification:\n"
-        f"{item['url']}"
+
+        "🔗 Official Notification\n"
+        f"{item['url']}\n\n"
+
+        "⚡ NEJobPoint Vacancy Alert"
     )
 
 
@@ -569,9 +786,17 @@ def main():
     print("")
     print("=" * 60)
     print("GOVERNMENT VACANCY MONITOR STARTED")
+    print(
+        datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+    )
     print("=" * 60)
 
+    # ---------------------------------------------
     # Load websites
+    # ---------------------------------------------
+
     try:
 
         with open(
@@ -581,6 +806,14 @@ def main():
         ) as f:
 
             websites = json.load(f)
+
+        if not isinstance(
+            websites,
+            list
+        ):
+            raise ValueError(
+                "websites.json must contain a list"
+            )
 
     except Exception as error:
 
@@ -595,7 +828,10 @@ def main():
         f"{len(websites)}"
     )
 
+    # ---------------------------------------------
     # Load history
+    # ---------------------------------------------
+
     seen, has_baseline = load_seen()
 
     print(
@@ -605,17 +841,21 @@ def main():
 
     all_found = []
 
-    # =====================================================
-    # CHECK ALL WEBSITES
-    # =====================================================
+    # ---------------------------------------------
+    # Check every website
+    # ---------------------------------------------
 
     for site in websites:
 
         try:
 
-            items = get_links(site)
+            items = get_links(
+                site
+            )
 
-            all_found.extend(items)
+            all_found.extend(
+                items
+            )
 
             print(
                 f"{site.get('name', 'Unknown')}: "
@@ -623,10 +863,6 @@ def main():
             )
 
         except Exception as error:
-
-            # Important:
-            # One website failure must NOT stop
-            # the entire monitoring system.
 
             print(
                 f"{site.get('name', 'Unknown')}: "
@@ -639,9 +875,9 @@ def main():
         f"{len(all_found)}"
     )
 
-    # =====================================================
-    # FIRST RUN BASELINE
-    # =====================================================
+    # ---------------------------------------------
+    # First run baseline
+    # ---------------------------------------------
 
     if not has_baseline:
 
@@ -670,9 +906,9 @@ def main():
 
         return
 
-    # =====================================================
-    # FIND NEW ITEMS
-    # =====================================================
+    # ---------------------------------------------
+    # Find NEW notifications
+    # ---------------------------------------------
 
     new_items = []
 
@@ -691,13 +927,15 @@ def main():
         f"{len(new_items)}"
     )
 
-    # =====================================================
-    # SEND TELEGRAM ALERTS
-    # =====================================================
+    # ---------------------------------------------
+    # Send alerts
+    # ---------------------------------------------
 
     successfully_sent = 0
 
-    for item in new_items[:MAX_TELEGRAM_ALERTS]:
+    for item in new_items[
+        :MAX_TELEGRAM_ALERTS
+    ]:
 
         message = create_message(
             item
@@ -711,10 +949,8 @@ def main():
 
             successfully_sent += 1
 
-            # IMPORTANT:
             # Only mark as seen AFTER
-            # Telegram successfully sends.
-
+            # successful Telegram delivery.
             seen.add(
                 item["id"]
             )
@@ -732,14 +968,13 @@ def main():
                 f"{error}"
             )
 
-            # DO NOT add failed notification
-            # to seen.json.
-            #
-            # It will be retried on next run.
+            # Failed alerts remain unseen
+            # and will be retried next run.
 
-    # =====================================================
-    # SAVE HISTORY
-    # =====================================================
+    # ---------------------------------------------
+    # Prevent unlimited history growth from
+    # duplicate entries already present.
+    # ---------------------------------------------
 
     save_seen(
         seen
@@ -765,3 +1000,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+```
